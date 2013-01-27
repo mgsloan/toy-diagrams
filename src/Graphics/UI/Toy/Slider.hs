@@ -11,15 +11,15 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.UI.Toy.Slider
--- Copyright   :  (c) 2012 Michael Sloan (see LICENSE)
--- License     :  BSD-style (see LICENSE)
+-- Copyright   :  (c) 2012 Michael Sloan
+-- License     :  BSD-style (see the LICENSE file)
 -- Maintainer  :  mgsloan@gmail.com
 --
 -- Simple slider UI element.
 --
 -----------------------------------------------------------------------------
 module Graphics.UI.Toy.Slider 
-  ( CairoSlider, Slider(..)
+  ( Slider(..)
  
   -- * Lenses
   , sliderLine, sliderMetric, sliderHandle, sliderValue
@@ -34,24 +34,23 @@ import Control.Category       ( (.) )
 import Control.Newtype        ( Newtype(..) )
 import Data.AffineSpace.Point ( Point(..) )
 import Data.Label             ( Lens, Bijection(..), (:->), mkLabels, lens, iso, get, set, modify )
-import Diagrams.Backend.Cairo ( Cairo )
+import Data.Semigroup         ( Any )
 
 import Diagrams.Prelude
-  ( V, Scalar, R2, VectorSpace(..), InnerSpace(..), HasLinearMap, OrderedField, AdditiveGroup(..)
+  ( V, R2, Scalar, R2, VectorSpace(..), InnerSpace(..), HasLinearMap, OrderedField, AdditiveGroup(..)
   , Diagram, Enveloped(..), Renderable, Path
   , (&), origin, magnitude, lerp, normalized
-  , (<>), (#), circle, fromOffsets, stroke
+  , (<>), (#), circle, fromOffsets
   )
 
+import Graphics.UI.Toy
 import Graphics.UI.Toy.Diagrams
 import Graphics.UI.Toy.Draggable
-import Graphics.UI.Toy.Gtk
 
 -- TODO: once decent math stuff is in place, make sliders on arbitrary paths.
 
 -- TODO: something simpler than 'sliderMetric'
 
-type CairoSlider a = Slider Cairo R2 a
 
 -- | A @'Slider' b v a@ represents a simple slider UI element.  These can be
 --   used as input widgets for any type of data that has a 'Bijection' with
@@ -99,7 +98,8 @@ type instance V (Slider b v a) = v
 
 --TODO: Make more generic once we have "D2"
 
-instance (Newtype R2 (MousePos ib)) => Interactive ib (Slider b R2 a) where
+instance (Newtype v (MousePos ib), HasLinearMap v, InnerSpace v, OrderedField (Scalar v))
+      => Interactive ib (Slider b v a) where
   mouse m i = modifyM sliderHandle (mouse m i)
     where
 --      modifyM :: Monad m => (b :-> a) -> (a -> m a) -> b -> m b
@@ -107,13 +107,14 @@ instance (Newtype R2 (MousePos ib)) => Interactive ib (Slider b R2 a) where
         a <- f $ get l x
         return $ set l a x
 
--- TODO: make vectorspace independent (requires polymorphic stroke)
+-- TODO: make vectorspace independent (requires polymorphic fromOffsets)
 
-instance Diagrammable Cairo R2 (CairoSlider a) where
-  diagram s = stroke (fromOffsets [get sliderLine s]) # blackLined
+instance Renderable (Path R2) b
+      => Diagrammable b R2 Any (Slider b R2 a) where
+  diagram s = fromOffsets [get sliderLine s] # blackLined
            <> diagram (get sliderHandle' s)
 
-instance ( InnerSpace v, HasLinearMap v, OrderedField (Scalar v) )
+instance (HasLinearMap v, InnerSpace v, OrderedField (Scalar v))
       => Enveloped (Slider b v a) where
   getEnvelope s = getEnvelope [origin, P $ get sliderLine s]
                <> getEnvelope (get sliderHandle' s)

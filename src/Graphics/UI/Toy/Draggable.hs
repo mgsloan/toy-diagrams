@@ -14,15 +14,15 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.UI.Toy.Draggable
--- Copyright   :  (c) 2011 Michael Sloan (see LICENSE)
--- License     :  BSD-style (see LICENSE)
+-- Copyright   :  (c) 2011 Michael Sloan
+-- License     :  BSD-style (see the LICENSE file)
 -- Maintainer  :  mgsloan@gmail.com
 --
 -- Utilities for making things that can be clicked and dragged around.
 --
 -----------------------------------------------------------------------------
 module Graphics.UI.Toy.Draggable
-  ( Draggable(..), CairoDraggable, CairoHandle
+  ( Draggable(..)
 
   -- * Lenses
   , dragState, dragStart, dragOffset, dragContent
@@ -43,6 +43,7 @@ import Data.AffineSpace.Point ( Point(..) )
 import Data.Data              ( Data, Typeable1 )
 import Data.Label             ( (:->), mkLabels, lens, get, set )
 import Data.Maybe             ( isJust )
+import Data.Semigroup         ( Semigroup )
 
 import Diagrams.Prelude
   ( V, Scalar, R2, InnerSpace, HasLinearMap, OrderedField, AdditiveGroup(..)
@@ -50,13 +51,8 @@ import Diagrams.Prelude
   , (.-^), (^-^), translate, circle
   )
 
-import Graphics.UI.Toy.Gtk
-  ( GtkDisplay(..), Interactive(..), MousePos, simpleMouse )
-
-import Graphics.UI.Toy.Diagrams
-  ( Clickable(..), Diagrammable(..), CairoDiagrammable, CairoDiagram
-  , displayDiagram, blackLined
-  )
+import Graphics.UI.Toy          ( Interactive(..), MousePos, simpleMouse )
+import Graphics.UI.Toy.Diagrams ( Clickable(..), Diagrammable(..), blackLined )
 
 
 -- | Draggable things are translatable, and store state related to dragging.
@@ -75,27 +71,19 @@ deriving instance (Show a, Show (V a)) => Show (Draggable a)
 deriving instance (Data a, Data (V a), Data b) => Data (Draggable a)
 deriving instance Typeable1 Draggable
 
-type CairoDraggable a = Draggable a
-
-type CairoHandle = Draggable CairoDiagram
-
 type instance V (Draggable a) = V a
 
 $(mkLabels [''Draggable])
 
 instance ( v ~ V a, HasLinearMap v, InnerSpace v, OrderedField (Scalar v)
-         , Diagrammable b v a )
-        => Diagrammable b v (Draggable a) where
+         , Diagrammable b v q a, Semigroup q )
+        => Diagrammable b v q (Draggable a) where
   diagram d@(Draggable _ _ a)
     = translate (get dragOffset d) $ diagram a
 
 instance ( Clickable a, Newtype (V a) (MousePos ib), InnerSpace (V a) )
       => Interactive ib (Draggable a) where
   mouse = simpleMouse mouseDrag
-
-instance ( V a ~ R2, CairoDiagrammable a, Clickable a )
-      => GtkDisplay (Draggable a) where
-  display = displayDiagram diagram
 
 instance ( V a ~ v, Clickable a, InnerSpace v )
       => Clickable (Draggable a) where

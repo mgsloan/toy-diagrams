@@ -14,15 +14,15 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.UI.Toy.Button
--- Copyright   :  (c) 2011 Michael Sloan (see LICENSE)
--- License     :  BSD-style (see LICENSE)
+-- Copyright   :  (c) 2012 Michael Sloan
+-- License     :  BSD-style (see the LICENSE file)
 -- Maintainer  :  mgsloan@gmail.com
 --
 -- Simple button UI element.
 --
 -----------------------------------------------------------------------------
 module Graphics.UI.Toy.Button
-  ( ButtonState(..), Button(..), CairoButton
+  ( ButtonState(..), Button(..)
  
   -- * Lenses
   , buttonState, buttonHit, buttonDiagram
@@ -31,22 +31,17 @@ module Graphics.UI.Toy.Button
   , clearButtonHit
 
   -- * Construction
-  , mkButton, mkDefaultButton
+  , mkButton
   ) where
 
 import Control.Newtype (Newtype, pack)
 import Data.AffineSpace.Point (Point(P))
-import Data.Colour
-import Data.Colour.Names
 import Data.Label
-import Diagrams.Backend.Cairo (Cairo)
-import Diagrams.Backend.Cairo.Text (textLineBounded)
 import Diagrams.Prelude
 
-import Graphics.UI.Toy.Gtk
+import Graphics.UI.Toy
 import Graphics.UI.Toy.Diagrams
 
-type CairoButton = Button Cairo R2
 
 data ButtonState
   = NormalState
@@ -78,23 +73,6 @@ $(mkLabels [''Button])
 mkButton :: (Button b v -> Diagram b v) -> Button b v
 mkButton = Button NormalState False
 
--- | Builds a button containing text.  The outside border is a rounded
---   rectangle, and when pressed, it's drawn with a black fill and white lines.
-mkDefaultButton :: String -> CairoButton
-mkDefaultButton txt = mkButton dia
-  where
-    dia b = addTint $ case _buttonState b of
-        NormalState -> blackLined $ label <> border
-        HoverState  -> blackLined $ label <> fc lightgray border
-        PressState  -> fc white label <> (border # fc black # lc white)
-      where
-        addTint
-          | _buttonHit b = flip overlayScaled (square 1 # fcA redTint)
-          | otherwise    = id
-        redTint = red `withOpacity` 0.5
-    border = centerXY . lw 2 $ roundedRect (width label + 5) (height label + 5) 3
-    label = centerXY . pad 1 . reflectY $ textLineBounded monoStyle txt
-
 -- | This function literally just 'set's 'buttonHit' to 'False'.
 clearButtonHit :: Button b v -> Button b v
 clearButtonHit = set buttonHit False
@@ -112,7 +90,7 @@ instance ( Newtype v (MousePos ib)
       (True,               _,          _) -> set buttonState HoverState
       (False,              _,          _) -> set buttonState NormalState
 
-instance Diagrammable b v (Button b v) where
+instance Diagrammable b v Any (Button b v) where
   diagram x = get buttonDiagram x x
 
 instance (InnerSpace v, HasLinearMap v, OrderedField (Scalar v))

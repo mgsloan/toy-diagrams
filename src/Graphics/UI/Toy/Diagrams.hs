@@ -1,5 +1,6 @@
 {-# LANGUAGE
     ConstraintKinds
+  , DefaultSignatures
   , FlexibleContexts
   , FlexibleInstances
   , MultiParamTypeClasses
@@ -21,66 +22,39 @@
 --
 -----------------------------------------------------------------------------
 module Graphics.UI.Toy.Diagrams
-  ( 
-  -- * Clickable
-    Clickable(..)
-  -- * Diagrammable
-  , CairoDiagrammable
-  , CairoDiagram
+  ( Clickable(..)
   , Diagrammable(..)
-  , defaultDisplay
   -- * Miscellanious Utilities
-  , displayDiagram
   , blackLined, monoStyle, underlayScaled, overlayScaled, underlayWithExtents, overlayWithExtents
   ) where
 
-import Data.Basis             ( Basis )
-import Data.Maybe             ( fromMaybe )
-import Diagrams.Backend.Cairo ( Cairo )
-import Diagrams.Backend.Gtk   ( renderToGtk )
+import Data.Basis ( Basis )
+import Data.Maybe ( fromMaybe )
 import Diagrams.Prelude
-
-import Graphics.UI.Gtk        ( DrawWindow )
-import Graphics.UI.Toy.Gtk    ( Gtk, InputState )
 
 
 -- | Clickable things have some concept of which positions are significant when
 --   clicked.  Used for buttons, sliders, etc.
---
---   Defaults to running the 'Diagram's query function when 'Diagrammable'
---   (Default Signatures).
 class Clickable a where
   clickInside :: a -> Point (V a) -> Bool
 
-  default clickInside :: forall a b. (HasLinearMap (V a), Diagrammable b a)
+{- GHC bug?  ScopedTypeVariables don't seem to work
+--   Defaults to running the 'Diagram's query function when 'Diagrammable'
+--   (default method signatures).
+  default clickInside :: forall b. (HasLinearMap (V a), Diagrammable b (V a) a)
                       => a -> Point (V a) -> Bool
   clickInside x = clickInside (diagram x :: Diagram b (V a))
+-}
 
 instance HasLinearMap v => Clickable (Diagram b v) where
   clickInside d = getAny . runQuery (query d)
 
-
-type CairoDiagram = Diagram Cairo R2
-
-type CairoDiagrammable a = Diagrammable Cairo R2 a
-
 -- | Typeclass for things that have a default way of being displayed as a diagram.
-class Diagrammable b v a where
-  diagram :: a -> Diagram b v
+class Diagrammable b v q a where
+  diagram :: a -> QDiagram b v q
 
-instance Diagrammable b v (Diagram b v) where
+instance Diagrammable b v q (QDiagram b v q) where
   diagram = id
-
--- | Convenience function for implementing the display function of 'GtkDisplay'.
-displayDiagram :: (a -> CairoDiagram)
-               -> DrawWindow -> InputState Gtk -> a -> IO a
-displayDiagram f dw _ x = (renderToGtk dw $ f x) >> return x
-
--- | Simply @'displayDiagram' 'diagram'@, useful for boilerplate implementations
---   of 'GtkDisplay'.
-defaultDisplay :: CairoDiagrammable a
-               => DrawWindow -> InputState Gtk -> a -> IO a
-defaultDisplay = displayDiagram diagram
 
 -- | Utility function to set a decent style for line drawings: black lines with
 --   a two pixel stroke.

@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.UI.Toy.Demo
--- Copyright   :  (c) 2012 Michael Sloan (see LICENSE)
--- License     :  BSD-style (see LICENSE)
+-- Copyright   :  (c) 2012 Michael Sloan
+-- License     :  BSD-style (see the LICENSE file)
 -- Maintainer  :  mgsloan@gmail.com
 --
 -- Convenient way of making manipulable things.
