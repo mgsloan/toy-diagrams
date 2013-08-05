@@ -5,6 +5,7 @@
   , FlexibleInstances
   , MultiParamTypeClasses
   , StandaloneDeriving
+  , ScopedTypeVariables
   , TemplateHaskell
   , TypeFamilies
   , TypeOperators
@@ -30,7 +31,7 @@ module Graphics.UI.Toy.Draggable
   -- * Query
   , isDragging
 
-  -- * Mutation 
+  -- * Mutation
   , mouseDrag
   , startDrag, updateDrag, endDrag
 
@@ -38,18 +39,18 @@ module Graphics.UI.Toy.Draggable
   , mkDraggable, mkHandle
   ) where
 
-import Control.Newtype        ( Newtype, pack )
+import Control.Lens
 import Data.AffineSpace.Point ( Point(..) )
 import Data.Data              ( Data, Typeable1 )
-import Data.Label             ( (:->), mkLabels, lens, get, set )
 import Data.Maybe             ( isJust )
 import Data.Semigroup         ( Semigroup )
 
 import Diagrams.Prelude
   ( V, Scalar, R2, InnerSpace, HasLinearMap, OrderedField, AdditiveGroup(..)
-  , Enveloped(..), Transformable, PathLike, HasStyle
+  , Enveloped(..), Transformable, HasStyle, TrailLike
   , (.-^), (^-^), translate, circle
   )
+import Diagrams.Lens
 
 import Graphics.UI.Toy          ( Interactive(..), MousePos, simpleMouse )
 import Graphics.UI.Toy.Diagrams ( Clickable(..), Diagrammable(..), blackLined )
@@ -60,7 +61,7 @@ import Graphics.UI.Toy.Diagrams ( Clickable(..), Diagrammable(..), blackLined )
 --   being dragged, and stores (current mouse pos, initial mouse pos).
 --   Subtracting these and adding two '_dragState' gives 'dragOffset', the
 --   amount that the '_dragContent' should be offset when drawing.
-data Draggable a = Draggable 
+data Draggable a = Draggable
   { _dragState :: Maybe (V a, V a)
   , _dragStart :: V a
   , _dragContent :: a
@@ -68,45 +69,45 @@ data Draggable a = Draggable
 
 deriving instance (Read a, Read (V a)) => Read (Draggable a)
 deriving instance (Show a, Show (V a)) => Show (Draggable a)
-deriving instance (Data a, Data (V a), Data b) => Data (Draggable a)
+deriving instance (Data a, Data (V a)) => Data (Draggable a)
 deriving instance Typeable1 Draggable
 
 type instance V (Draggable a) = V a
 
-$(mkLabels [''Draggable])
+$(makeLenses ''Draggable)
 
 instance ( v ~ V a, HasLinearMap v, InnerSpace v, OrderedField (Scalar v)
          , Diagrammable b v q a, Semigroup q )
         => Diagrammable b v q (Draggable a) where
   diagram d@(Draggable _ _ a)
-    = translate (get dragOffset d) $ diagram a
+    = translate (d ^. dragOffset) $ diagram a
 
-instance ( Clickable a, Newtype (V a) (MousePos ib), InnerSpace (V a) )
+instance ( Clickable a, Wrapped' (V a) (MousePos ib), InnerSpace (V a) )
       => Interactive ib (Draggable a) where
   mouse = simpleMouse mouseDrag
 
 instance ( V a ~ v, Clickable a, InnerSpace v )
       => Clickable (Draggable a) where
-  clickInside d p = clickInside (_dragContent d) $ p .-^ get dragOffset d
+  clickInside d p = clickInside (d ^. dragContent) $ p .-^ (d ^. dragOffset)
 
 instance ( V a ~ v, Enveloped a, HasLinearMap v, InnerSpace v )
       => Enveloped (Draggable a) where
-  getEnvelope d = translate (get dragOffset d) 
-                . getEnvelope $ get dragContent d
+  getEnvelope d = translate (d ^. dragOffset)
+                $ getEnvelope (d ^. dragContent)
 
 -- | Creates dragging state for some object, with an initial offset.
 mkDraggable :: V a -> a -> Draggable a
 mkDraggable = Draggable Nothing
 
 -- | Creates a draggable circle of the given radius.
-mkHandle :: (PathLike a, Transformable a, HasStyle a, V a ~ R2)
+mkHandle :: (TrailLike a, Transformable a, HasStyle a, V a ~ R2)
          => Double -> Draggable a
 mkHandle = mkDraggable zeroV . blackLined . circle
 
 -- | Pure mouse handler, compatible with the type expected by "simpleMouse".
 --   Only triggers for left mouse clicks (mouse 1).
-mouseDrag :: (Eq t, Num t, Newtype (V a) o, InnerSpace (V a), Clickable a)
-          =>       Maybe (Bool, t) -> o -> Draggable a -> Draggable a
+mouseDrag :: (Eq t, Num t, Wrapped' (V a) o, InnerSpace (V a), Clickable a)
+          => Maybe (Bool, t) -> o -> Draggable a -> Draggable a
 mouseDrag m v d = case m of
   (Just (True,  0))
     | clickInside d (P p) -> startDrag p d
@@ -114,11 +115,11 @@ mouseDrag m v d = case m of
   (Just (False, 0))       -> endDrag d
   _                       -> d
  where
-  p = pack v
+  p = v ^. unwrapped'
 
 -- | Switches into dragging mode at the given position.
 startDrag :: AdditiveGroup (V a) => V a -> Draggable a -> Draggable a
-startDrag p = set dragState $ Just (p, p)
+startDrag p = dragState .~ Just (p, p)
 
 -- | Updates the drag with a new mouse position, if the object is being dragged.
 updateDrag :: V a -> Draggable a -> Draggable a
@@ -128,17 +129,19 @@ updateDrag _ d = d
 -- | Switches out of dragging mode.
 endDrag :: AdditiveGroup (V a)
         => Draggable a -> Draggable a
-endDrag d = Draggable Nothing (get dragOffset d) $ _dragContent d
+endDrag d = Draggable Nothing (d ^. dragOffset) (d ^. dragContent)
 
 -- | Queries whether the 'Draggable' is currently being dragged.
 isDragging :: Draggable a -> Bool
-isDragging = isJust . get dragState
+isDragging = isJust . view dragState
 
 -- | Lens on the current amount of offset for the diagram.
-dragOffset :: AdditiveGroup (V a)
-           => Draggable a :-> V a
+dragOffset :: forall a. AdditiveGroup (V a)
+           => Lens' (Draggable a) (V a)
 dragOffset = lens getter setter
  where
   delta = maybe zeroV (uncurry (^-^))
+  getter :: Draggable a -> V a
   getter    (Draggable c a _) = a ^+^ delta c
-  setter a' (Draggable c _ x) = Draggable c (a' ^-^ delta c) x
+  setter :: Draggable a -> V a -> Draggable a
+  setter (Draggable c _ x) a' = Draggable c (a' ^-^ delta c) x

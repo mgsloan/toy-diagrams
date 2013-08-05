@@ -13,7 +13,7 @@ Stability:           experimental
 Build-Type:          Simple
 Source-repository head
   type:              git
-  location:          git://github.com/mgsloan/toy-diagrams.git
+  location:          https://github.com/mgsloan/toy-diagrams
 
 Library
   Build-Depends:     base,
@@ -21,12 +21,10 @@ Library
                      colour,
                      data-default,
                      diagrams-lib,
-                     diagrams-core >= 0.6 && < 0.7,
+                     diagrams-core >= 0.7 && < 0.8,
                      diagrams-contrib,
-                     fclabels,
+                     lens >= 3.9 && < 3.10,
                      MemoTrie,
-                     newtype,
-                     newtype-th >= 0.3,
                      semigroups,
                      toy-interface >= 0.3.0 && < 0.4.0,
                      vector-space,
@@ -34,9 +32,9 @@ Library
   Hs-source-dirs:    src
   ghc-options:       -Wall -fwarn-tabs -O2
   Exposed-Modules:
+    Graphics.UI.Toy.Button
     Graphics.UI.Toy.Diagrams
     Graphics.UI.Toy.Dict
     Graphics.UI.Toy.Draggable
-    Graphics.UI.Toy.Button
-    Graphics.UI.Toy.Slider
+--    Graphics.UI.Toy.Slider
     Graphics.UI.Toy.Transformed

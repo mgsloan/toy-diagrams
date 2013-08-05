@@ -1,4 +1,4 @@
-{-# LANGUAGE 
+{-# LANGUAGE
    ConstraintKinds
  , FlexibleInstances
  , FlexibleContexts
@@ -23,7 +23,7 @@
 -----------------------------------------------------------------------------
 module Graphics.UI.Toy.Button
   ( ButtonState(..), Button(..)
- 
+
   -- * Lenses
   , buttonState, buttonHit, buttonDiagram
 
@@ -34,14 +34,13 @@ module Graphics.UI.Toy.Button
   , mkButton
   ) where
 
-import Control.Newtype (Newtype, pack)
+import Control.Lens
 import Data.AffineSpace.Point (Point(P))
-import Data.Label
-import Diagrams.Prelude
+import Diagrams.Prelude hiding (view)
+import Diagrams.Lens
 
 import Graphics.UI.Toy
 import Graphics.UI.Toy.Diagrams
-
 
 data ButtonState
   = NormalState
@@ -60,13 +59,13 @@ data ButtonState
 data Button b v = Button
   { _buttonState   :: ButtonState -- ^ Whether the mouse is hovering / pressing.
   , _buttonHit     :: Bool        -- ^ Whether the button was hit.
-  , _buttonDiagram :: Button b v -> Diagram b v 
+  , _buttonDiagram :: Button b v -> Diagram b v
                                   -- ^ Draw button based on the state.
   }
 
 type instance V (Button b v) = v
 
-$(mkLabels [''Button])
+$(makeLenses ''Button)
 
 -- | Builds a button, given the function used to draw it.  The first argument
 --   of this function is a boolean that indicates whether it's held.
@@ -77,21 +76,22 @@ mkButton = Button NormalState False
 clearButtonHit :: Button b v -> Button b v
 clearButtonHit = set buttonHit False
 
-instance ( Newtype v (MousePos ib)
+instance ( Wrapped' v (MousePos ib)
          , HasLinearMap v, InnerSpace v, OrderedField (Scalar v) )
       => Interactive ib (Button b v) where
   mouse m i b = return $ transition b
    where
-    ci = clickInside b . P . pack $ mousePos i
-    transition = case (ci, m, _buttonState b) of
-      (True, Just (True,  0),          _) -> set buttonState PressState
-      (True, Just (False, 0), PressState) -> set buttonState HoverState . set buttonHit True
+    ci = clickInside b . P . view unwrapped' $ mousePos i
+    transition = case (ci, m, b ^. buttonState) of
+      (True, Just (True,  0),          _) -> buttonState .~ PressState
+      (True, Just (False, 0), PressState) -> (buttonState .~ HoverState)
+                                           . (buttonHit .~ True)
       (True,               _, PressState) -> id
-      (True,               _,          _) -> set buttonState HoverState
-      (False,              _,          _) -> set buttonState NormalState
+      (True,               _,          _) -> buttonState .~ HoverState
+      (False,              _,          _) -> buttonState .~ NormalState
 
 instance Diagrammable b v Any (Button b v) where
-  diagram x = get buttonDiagram x x
+  diagram x = (x ^. buttonDiagram) x
 
 instance (InnerSpace v, HasLinearMap v, OrderedField (Scalar v))
       => Enveloped (Button b v) where

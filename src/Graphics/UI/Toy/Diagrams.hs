@@ -11,7 +11,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.UI.Toy.Diagrams
--- Copyright   :  (c) 2011 Michael Sloan 
+-- Copyright   :  (c) 2011 Michael Sloan
 -- License     :  BSD-style (see the LICENSE file)
 --
 -- Maintainer  :  Michael Sloan <mgsloan@gmail.com>
@@ -25,7 +25,9 @@ module Graphics.UI.Toy.Diagrams
   ( Clickable(..)
   , Diagrammable(..)
   -- * Miscellanious Utilities
-  , blackLined, monoStyle, underlayScaled, overlayScaled, underlayWithExtents, overlayWithExtents
+  , blackLined, monoStyle
+  , underlayScaled, overlayScaled
+  , underlayWithExtents, overlayWithExtents
   ) where
 
 import Data.Basis ( Basis )
@@ -49,7 +51,7 @@ class Clickable a where
 instance HasLinearMap v => Clickable (Diagram b v) where
   clickInside d = getAny . runQuery (query d)
 
--- | Typeclass for things that have a default way of being displayed as a diagram.
+-- | Typeclass providing a default way to be displayed as a diagram.
 class Diagrammable b v q a where
   diagram :: a -> QDiagram b v q
 
@@ -73,14 +75,12 @@ monoStyle = font "monospace" $ fontSize 18 mempty
 -- TODO: Move these into diagrams?
 
 underlayScaled, overlayScaled
-  :: ( HasLinearMap v, InnerSpace v, AdditiveGroup v
-     , Floating (Scalar v), Ord (Scalar v), Ord (Basis v), AdditiveGroup (Scalar v)
+  :: ( HasLinearMap v, InnerSpace v, Ord (Basis v), OrderedField (Scalar v)
      , Semigroup m, Monoid m )
   => QDiagram b v m -> QDiagram b v m -> QDiagram b v m
 
 underlayWithExtents, overlayWithExtents
-  :: ( HasLinearMap v, InnerSpace v, AdditiveGroup v
-     , Floating (Scalar v), Ord (Scalar v), Ord (Basis v), AdditiveGroup (Scalar v)
+  :: ( HasLinearMap v, InnerSpace v, Ord (Basis v), OrderedField (Scalar v)
      , Semigroup m, Monoid m )
   => QDiagram b v m -> (v -> QDiagram b v m) -> QDiagram b v m
 
@@ -110,8 +110,9 @@ overlayWithExtents d f
 
 -- | @'alignLowestCorner' a b@  Translates @b@ such that its lowest corner is
 --   aligned to the lowest corner of the @a@.
-alignLowestCorner :: ( Enveloped a, Transformable a, Ord (Basis (V a)) )
-                  => BoundingBox (V a) -> a -> a
+alignLowestCorner
+  :: (Enveloped a, Transformable a, Ord (Basis (V a)))
+  => BoundingBox (V a) -> a -> a
 alignLowestCorner b x = fromMaybe x $ do
   (l_b, _) <- getCorners b
   (l_x, _) <- getCorners $ boundingBox x

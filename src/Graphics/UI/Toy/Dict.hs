@@ -5,11 +5,12 @@
   , MultiParamTypeClasses
   , TupleSections
   , TypeFamilies
+  , UndecidableInstances
   #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.UI.Toy.Dict
--- Copyright   :  (c) 2012 Michael Sloan 
+-- Copyright   :  (c) 2012 Michael Sloan
 -- License     :  BSD-style (see the LICENSE file)
 --
 -- Maintainer  :  Michael Sloan <mgsloan@gmail.com>
@@ -22,7 +23,7 @@
 --
 -----------------------------------------------------------------------------
 module Graphics.UI.Toy.Dict
-  ( 
+  (
 -- * Dictionary
     WithDict(..), Dictionary(..), withDict
 
@@ -96,7 +97,7 @@ instance Clickable a => Clickable (WithDict d a) where
 
 
 -- | An instance of 'Dictionary' provides a 'dict', populated from an instance
---   of the actual typeclass.  In other words, 
+--   of the actual typeclass.
 class Dictionary d where
   dict :: d
 
@@ -203,7 +204,7 @@ mkPureToyDict
   -> (MouseEvent -> MousePos   ib -> a -> a)
   -> (KeyEvent                    -> a -> a)
   -> ToyDict ib b v q a
-mkPureToyDict df tf mf kf = ToyDict 
+mkPureToyDict df tf mf kf = ToyDict
   (DiagrammableDict df)
   (mkInteractiveDict tf mf kf)
 
@@ -237,7 +238,7 @@ mkTraversableToyDict :: ( Traversable t, Interactive ib a, Diagrammable b v q a
                         , Semigroup q, HasLinearMap v, InnerSpace v
                         , Ord (Scalar v), Fractional (Scalar v), Floating (Scalar v) )
                      => ToyDict ib b v q (t a)
-mkTraversableToyDict = ToyDict 
+mkTraversableToyDict = ToyDict
   (DiagrammableDict . foldMapDefault $ diagramFunc dict)
   (InteractiveDict
   -- TODO: or together the boolean results

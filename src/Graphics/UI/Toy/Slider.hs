@@ -17,10 +17,12 @@
 --
 -- Simple slider UI element.
 --
+-- TODO: Re-add to project
+--
 -----------------------------------------------------------------------------
-module Graphics.UI.Toy.Slider 
+module Graphics.UI.Toy.Slider
   ( Slider(..)
- 
+
   -- * Lenses
   , sliderLine, sliderMetric, sliderHandle, sliderValue
 
@@ -29,17 +31,14 @@ module Graphics.UI.Toy.Slider
   , mkToggle, mkDefaultToggle
   ) where
 
-import Prelude hiding ((.))
-import Control.Category       ( (.) )
-import Control.Newtype        ( Newtype(..) )
+import Control.Lens
 import Data.AffineSpace.Point ( Point(..) )
-import Data.Label             ( Lens, Bijection(..), (:->), mkLabels, lens, iso, get, set, modify )
 import Data.Semigroup         ( Any )
 
 import Diagrams.Prelude
   ( V, R2, Scalar, R2, VectorSpace(..), InnerSpace(..), HasLinearMap, OrderedField, AdditiveGroup(..)
   , Diagram, Enveloped(..), Renderable, Path
-  , (&), origin, magnitude, lerp, normalized
+  , origin, magnitude, lerp, normalized
   , (<>), (#), circle, fromOffsets
   )
 
@@ -122,12 +121,12 @@ instance (HasLinearMap v, InnerSpace v, OrderedField (Scalar v))
 -- | Allows mutation of the slider's handle.  Note that this is not a true
 --   lens, because it ensures that the handle is on the slider line.  This
 --   is done by round-tripping through 'sliderValue'.
-sliderHandle :: (OrderedField (Scalar v), AdditiveGroup v, InnerSpace v)
+sliderHandle :: (InnerSpace v, OrderedField (Scalar v))
              => Lens (->) (Slider b v a) (Draggable (Diagram b v))
 sliderHandle = lens (get sliderHandle') setter
  where
   setter x s
-    = let s' = set sliderHandle' x s 
+    = let s' = set sliderHandle' x s
        in modify sliderValue id s'
 
 -- | 'sliderValue' is a lens that can either yield the current value of the
