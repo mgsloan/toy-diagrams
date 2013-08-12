@@ -8,7 +8,7 @@
   , TypeFamilies
   , TypeSynonymInstances
   #-}
------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.UI.Toy.Diagrams
 -- Copyright   :  (c) 2011 Michael Sloan
@@ -18,9 +18,9 @@
 -- Stability   :  experimental
 -- Portability :  GHC only
 --
--- Diagrams utilities
+-- Misc diagrams utilities
 --
------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 module Graphics.UI.Toy.Diagrams
   ( Clickable(..)
   , Diagrammable(..)

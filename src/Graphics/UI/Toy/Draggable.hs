@@ -12,7 +12,7 @@
   , TypeSynonymInstances
   , UndecidableInstances
   #-}
------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.UI.Toy.Draggable
 -- Copyright   :  (c) 2011 Michael Sloan
@@ -21,7 +21,7 @@
 --
 -- Utilities for making things that can be clicked and dragged around.
 --
------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 module Graphics.UI.Toy.Draggable
   ( Draggable(..)
 

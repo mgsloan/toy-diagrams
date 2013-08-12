@@ -13,7 +13,7 @@
   , TypeFamilies
   , UndecidableInstances
   #-}
------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.UI.Toy.Transformed
 -- Copyright   :  (c) 2011 Michael Sloan
@@ -26,7 +26,7 @@
 -- 'Transformed' allows 'Interactive', 'Diagrammable' things to be transformed
 -- and overlapped, such that the layout combinators from diagrams apply.
 --
------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
 module Graphics.UI.Toy.Transformed
   ( Transformed(..)

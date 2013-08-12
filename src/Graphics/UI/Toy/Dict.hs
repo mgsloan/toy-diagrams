@@ -7,7 +7,7 @@
   , TypeFamilies
   , UndecidableInstances
   #-}
------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.UI.Toy.Dict
 -- Copyright   :  (c) 2012 Michael Sloan
@@ -21,7 +21,7 @@
 -- a bit of a design smell to have these value-level dictionaries for these
 -- typeclasses, they can be very handy for \"toy\" demos and ghci.
 --
------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 module Graphics.UI.Toy.Dict
   (
 -- * Dictionary
