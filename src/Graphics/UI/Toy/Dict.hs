@@ -234,10 +234,10 @@ mkDiagrammableToyDict = ToyDict (DiagrammableDict $ diagramFunc dict) dict
 --   dictionary implements these such that every subcomponent receives all
 --   'tick', 'mouse', 'keyboard', and 'diagram' call.  The resulting
 --   'CairoDiagram's are merged together via '(<>)'
-mkTraversableToyDict :: ( Traversable t, Interactive ib a, Diagrammable b v q a
-                        , Semigroup q, HasLinearMap v, InnerSpace v
-                        , Ord (Scalar v), Fractional (Scalar v), Floating (Scalar v) )
-                     => ToyDict ib b v q (t a)
+mkTraversableToyDict
+  :: ( Traversable t, Interactive ib a, Diagrammable b v q a
+     , Semigroup q, HasLinearMap v, InnerSpace v, OrderedField (Scalar v) )
+  => ToyDict ib b v q (t a)
 mkTraversableToyDict = ToyDict
   (DiagrammableDict . foldMapDefault $ diagramFunc dict)
   (InteractiveDict
